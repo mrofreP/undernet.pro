@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undernet — real-time chat, online since 1994</title>
+<meta name="description" content="Undernet is one of the world's original IRC networks — real conversations in real channels, no accounts, no algorithm. Connect in your browser or point any IRC client at irc.undernet.org.">
+<meta property="og:title" content="Undernet — real-time chat, online since 1994">
+<meta property="og:description" content="One of the world's original IRC networks. Open a channel, say hello. No account, no algorithm.">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    color-scheme: light dark;
+    --ground:#0e1117;
+    --panel:#161b24;
+    --panel-2:#1c232f;
+    --border:#2a3342;
+    --border-soft:#212a37;
+    --text:#c9d1dc;
+    --head:#eef2f7;
+    --muted:#7d8798;
+    --amber:#ffb454;
+    --amber-ink:#0e1117;
+    --link:#6ba4f7;
+    --nick-blue:#6ba4f7;
+    --nick-cyan:#4fd6c7;
+    --nick-magenta:#d98cf5;
+    --nick-green:#8fd06a;
+    --nick-orange:#ff9d5c;
+    --glow: 0 0 0 1px rgba(255,180,84,.0);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --maxw: 1120px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ground:#eef1f6;
+      --panel:#ffffff;
+      --panel-2:#f4f6fb;
+      --border:#d6dce6;
+      --border-soft:#e4e9f1;
+      --text:#26303f;
+      --head:#131a25;
+      --muted:#5c6675;
+      --amber:#c9791a;
+      --amber-ink:#ffffff;
+      --link:#245fd0;
+      --nick-blue:#245fd0;
+      --nick-cyan:#0f8f81;
+      --nick-magenta:#9b3fca;
+      --nick-green:#3f8a2a;
+      --nick-orange:#c25a12;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0e1117;--panel:#161b24;--panel-2:#1c232f;--border:#2a3342;--border-soft:#212a37;
+    --text:#c9d1dc;--head:#eef2f7;--muted:#7d8798;--amber:#ffb454;--amber-ink:#0e1117;--link:#6ba4f7;
+    --nick-blue:#6ba4f7;--nick-cyan:#4fd6c7;--nick-magenta:#d98cf5;--nick-green:#8fd06a;--nick-orange:#ff9d5c;
+  }
+  :root[data-theme="light"]{
+    --ground:#eef1f6;--panel:#ffffff;--panel-2:#f4f6fb;--border:#d6dce6;--border-soft:#e4e9f1;
+    --text:#26303f;--head:#131a25;--muted:#5c6675;--amber:#c9791a;--amber-ink:#ffffff;--link:#245fd0;
+    --nick-blue:#245fd0;--nick-cyan:#0f8f81;--nick-magenta:#9b3fca;--nick-green:#3f8a2a;--nick-orange:#c25a12;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-snap-type:y proximity;scroll-padding-top:62px}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto;scroll-snap-type:none}}
+  body{
+    margin:0;background:var(--ground);color:var(--text);
+    font-family:var(--sans);font-size:17px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    background-image:
+      radial-gradient(900px 500px at 82% -8%, color-mix(in oklab, var(--amber) 12%, transparent), transparent 60%),
+      radial-gradient(800px 600px at 8% 5%, color-mix(in oklab, var(--nick-blue) 10%, transparent), transparent 55%);
+  }
+  a{color:var(--link);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:3px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:var(--mono)}
+  .skip{position:absolute;left:-999px;top:0;background:var(--amber);color:var(--amber-ink);padding:10px 16px;z-index:100;border-radius:0 0 8px 0}
+  .skip:focus{left:0}
+
+  /* ---- top bar ---- */
+  header.top{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+    background:color-mix(in oklab, var(--ground) 82%, transparent);
+    border-bottom:1px solid var(--border-soft)}
+  .top-in{display:flex;align-items:center;justify-content:space-between;gap:16px;height:62px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--mono);font-weight:700;color:var(--head);letter-spacing:-.02em;font-size:17px}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--amber);box-shadow:0 0 14px var(--amber);flex:none}
+  .brand .tld{color:var(--muted);font-weight:500}
+  nav.links{display:flex;align-items:center;gap:26px}
+  nav.links a{color:var(--muted);font-size:14.5px;font-family:var(--mono)}
+  nav.links a:hover{color:var(--head);text-decoration:none}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-weight:600;
+    font-size:14.5px;padding:10px 16px;border-radius:9px;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+  .btn-primary{background:var(--amber);color:var(--amber-ink);box-shadow:0 6px 22px -8px color-mix(in oklab,var(--amber) 70%, transparent)}
+  .btn-primary:hover{text-decoration:none;filter:brightness(1.06);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--head);border-color:var(--border)}
+  .btn-ghost:hover{text-decoration:none;border-color:var(--muted);background:var(--panel)}
+  .btn{transition:transform .15s ease, filter .15s ease, border-color .15s ease, background .15s ease}
+  @media (prefers-reduced-motion: reduce){.btn:hover{transform:none}}
+  /* fancy header chat CTA */
+  .btn-chat{position:relative;overflow:hidden;isolation:isolate;padding:7px 13px;border:1px solid color-mix(in oklab,var(--amber) 55%, #b5670f);
+    background:linear-gradient(118deg, color-mix(in oklab,var(--amber) 80%, #fff) 0%, var(--amber) 46%, color-mix(in oklab,var(--amber) 74%, #d9761a) 100%);
+    box-shadow:0 5px 18px -5px color-mix(in oklab,var(--amber) 65%, transparent), inset 0 1px 0 color-mix(in oklab,#fff 48%, transparent);
+    font-weight:700;letter-spacing:.01em;gap:8px}
+  .btn-chat:hover{filter:brightness(1.05);transform:translateY(-1px);
+    box-shadow:0 9px 28px -6px color-mix(in oklab,var(--amber) 80%, transparent), inset 0 1px 0 color-mix(in oklab,#fff 58%, transparent)}
+  .btn-chat::before{content:"";position:absolute;top:0;left:-65%;width:42%;height:100%;z-index:-1;
+    transform:skewX(-20deg);pointer-events:none;
+    background:linear-gradient(100deg, transparent, color-mix(in oklab,#fff 55%, transparent), transparent);
+    animation:chatsheen 4.6s ease-in-out infinite}
+  @keyframes chatsheen{0%,100%{left:-65%}18%{left:135%}60%{left:135%}}
+  .btn-chat .live{width:9px;height:9px;border-radius:50%;flex:none;background:#4fd6c7;
+    box-shadow:0 0 6px 1px rgba(79,214,199,.9), inset 0 0 0 1px rgba(6,44,40,.4);animation:chatlive 1.8s ease-out infinite}
+  @keyframes chatlive{
+    0%{box-shadow:0 0 6px 1px rgba(79,214,199,.9), inset 0 0 0 1px rgba(6,44,40,.4), 0 0 0 0 rgba(79,214,199,.6)}
+    70%{box-shadow:0 0 6px 1px rgba(79,214,199,.55), inset 0 0 0 1px rgba(6,44,40,.4), 0 0 0 6px rgba(79,214,199,0)}
+    100%{box-shadow:0 0 6px 1px rgba(79,214,199,.9), inset 0 0 0 1px rgba(6,44,40,.4), 0 0 0 0 rgba(79,214,199,0)}}
+  .btn-chat .arr{transition:transform .18s ease}
+  .btn-chat:hover .arr{transform:translateX(3px)}
+  @media (prefers-reduced-motion: reduce){
+    .btn-chat::before{animation:none;display:none}
+    .btn-chat .live{animation:none}
+    .btn-chat:hover{transform:none}.btn-chat:hover .arr{transform:none}
+  }
+  nav.links a.navchat{display:none}
+  @media (max-width:760px){nav.links a.navlink{display:none}}
+
+  /* ---- hero ---- */
+  .hero{padding:64px 0 30px}
+  .hero-grid{display:grid;grid-template-columns:1.02fr 1.18fr;gap:48px;align-items:center}
+  @media (max-width:940px){.hero-grid{grid-template-columns:1fr;gap:34px}.hero{padding:40px 0 20px}}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--border);padding:6px 12px;border-radius:999px;background:var(--panel)}
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--nick-green);box-shadow:0 0 10px var(--nick-green)}
+  h1{font-family:var(--mono);color:var(--head);font-weight:700;letter-spacing:-.04em;
+    font-size:clamp(1.95rem,4.4vw,3rem);line-height:1.1;margin:20px 0 0}
+  h1 .amber{color:var(--amber)}
+  .lede{font-size:clamp(1.05rem,2.2vw,1.22rem);color:var(--text);margin:22px 0 0;max-width:34ch}
+  .lede strong{color:var(--head);font-weight:600}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+  .cta-row .btn{padding:13px 20px;font-size:15.5px}
+  .microcopy{margin-top:16px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .microcopy b{color:var(--text);font-weight:600}
+
+  /* ---- irc window ---- */
+  .irc{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);
+    box-shadow:0 30px 70px -30px rgba(0,0,0,.55), 0 2px 0 0 color-mix(in oklab,var(--amber) 14%, transparent) inset}
+  .irc-bar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--panel-2);border-bottom:1px solid var(--border)}
+  .lights{display:flex;gap:7px}
+  .lights i{width:11px;height:11px;border-radius:50%;display:block;background:var(--border)}
+  .lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+  .irc-title{font-family:var(--mono);font-size:13px;color:var(--muted);margin-left:4px}
+  .irc-title b{color:var(--head);font-weight:600}
+  .irc-topic{padding:10px 16px;background:color-mix(in oklab,var(--nick-blue) 8%, var(--panel));
+    border-bottom:1px solid var(--border-soft);font-family:var(--mono);font-size:12.5px;color:var(--muted);
+    display:flex;gap:8px;align-items:baseline}
+  .irc-topic .k{color:var(--nick-blue);flex:none}
+  .irc-body{font-family:var(--mono);font-size:13.5px;line-height:1.85;padding:14px 16px 8px;
+    min-height:322px;display:flex;flex-direction:column;justify-content:flex-end;gap:1px}
+  @media (max-width:420px){.irc-body{font-size:12.2px;min-height:300px}}
+  .ln{display:block;opacity:0;transform:translateY(4px);animation:ln .01s forwards}
+  .ln .t{color:var(--muted)}
+  .ln .n{font-weight:600}
+  .ln .n.b{color:var(--nick-blue)}.ln .n.c{color:var(--nick-cyan)}.ln .n.m{color:var(--nick-magenta)}
+  .ln .n.g{color:var(--nick-green)}.ln .n.o{color:var(--nick-orange)}
+  .ln.sys{color:var(--muted)}
+  .ln.sys .star{color:var(--nick-green)}
+  .ln .hl{color:var(--head)}
+  @keyframes ln{to{opacity:1;transform:none}}
+  .reveal .ln{opacity:0}
+  .reveal .ln.show{opacity:1;transform:none;transition:opacity .28s ease, transform .28s ease}
+  @media (prefers-reduced-motion: reduce){
+    .reveal .ln{opacity:1 !important;transform:none !important;animation:none}
+    .ln{opacity:1;transform:none;animation:none}
+  }
+  .irc-input{display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding:11px 16px;background:var(--panel-2)}
+  .irc-input .prompt{font-family:var(--mono);color:var(--nick-green);font-size:13px}
+  .irc-input .field{font-family:var(--mono);color:var(--muted);font-size:13px}
+  .caret{display:inline-block;width:8px;height:15px;background:var(--amber);vertical-align:-2px;margin-left:1px;animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  @media (prefers-reduced-motion: reduce){.caret{animation:none}}
+
+  /* ---- sections ---- */
+  section{padding:66px 0;min-height:calc(100vh - 62px);min-height:calc(100svh - 62px);
+    display:flex;flex-direction:column;justify-content:center;scroll-snap-align:start}
+  /* scroll reveal — section fades, its content cascades up */
+  html.js .appear{opacity:0;transition:opacity .7s ease}
+  html.js .appear.seen{opacity:1}
+  html.js .appear .sec-head,
+  html.js .appear h2,
+  html.js .appear .sec-sub,
+  html.js .appear .card,
+  html.js .appear .grp,
+  html.js .appear .stat,
+  html.js .appear .panel{transform:translateY(22px);transition:transform .6s cubic-bezier(.16,.72,.29,1)}
+  html.js .appear.seen .sec-head,
+  html.js .appear.seen h2,
+  html.js .appear.seen .sec-sub,
+  html.js .appear.seen .card,
+  html.js .appear.seen .grp,
+  html.js .appear.seen .stat,
+  html.js .appear.seen .panel{transform:none}
+  html.js .appear.seen .sec-head{transition-delay:.02s}
+  html.js .appear.seen h2{transition-delay:.09s}
+  html.js .appear.seen .sec-sub{transition-delay:.15s}
+  html.js .appear.seen :is(.card,.grp,.stat,.panel):nth-child(1){transition-delay:.20s}
+  html.js .appear.seen :is(.card,.grp,.stat,.panel):nth-child(2){transition-delay:.27s}
+  html.js .appear.seen :is(.card,.grp,.stat,.panel):nth-child(3){transition-delay:.34s}
+  html.js .appear.seen :is(.card,.grp,.stat,.panel):nth-child(4){transition-delay:.41s}
+  html.js .appear.seen :is(.card,.grp,.stat,.panel):nth-child(5){transition-delay:.48s}
+  html.js .appear.seen :is(.card,.grp,.stat,.panel):nth-child(6){transition-delay:.55s}
+  @media (prefers-reduced-motion: reduce){
+    html.js .appear, html.js .appear *{opacity:1 !important;transform:none !important;transition:none !important}
+  }
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+  .sec-kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+  h2{font-family:var(--mono);color:var(--head);font-weight:700;letter-spacing:-.03em;
+    font-size:clamp(1.5rem,3.4vw,2.15rem);margin:6px 0 0;line-height:1.1;text-wrap:balance}
+  .sec-sub{color:var(--muted);max-width:60ch;margin:14px 0 0;font-size:1.02rem}
+  .divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+  @media (max-width:860px){.cards{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.cards{grid-template-columns:1fr}}
+  .card{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:22px 20px;
+    transition:border-color .18s ease, transform .18s ease, background .18s ease}
+  .card:hover{border-color:color-mix(in oklab,var(--amber) 45%, var(--border));transform:translateY(-3px)}
+  @media (prefers-reduced-motion: reduce){.card:hover{transform:none}}
+  .card .chan{font-family:var(--mono);font-size:13.5px;color:var(--nick-blue);font-weight:600}
+  .card h3{font-family:var(--sans);color:var(--head);font-size:1.12rem;margin:11px 0 0;letter-spacing:-.01em}
+  .card p{margin:9px 0 0;color:var(--muted);font-size:.98rem}
+
+  /* connect */
+  .connect-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;margin-top:34px;align-items:start}
+  @media (max-width:860px){.connect-grid{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--border);border-radius:13px;background:var(--panel);overflow:hidden}
+  .panel-h{padding:14px 18px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;color:var(--muted);display:flex;align-items:center;gap:9px}
+  .panel-h .dotmini{width:8px;height:8px;border-radius:50%;background:var(--nick-green);box-shadow:0 0 9px var(--nick-green)}
+  .panel-b{padding:20px 18px}
+  .field-label{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+  .copy-row{display:flex;align-items:stretch;gap:8px;margin-bottom:18px}
+  .copy-val{flex:1;font-family:var(--mono);font-size:15px;color:var(--head);background:var(--panel-2);
+    border:1px solid var(--border);border-radius:9px;padding:11px 14px;display:flex;align-items:center;overflow:auto}
+  .copy-btn{font-family:var(--mono);font-size:13px;font-weight:600;padding:0 15px;border-radius:9px;
+    border:1px solid var(--border);background:var(--panel-2);color:var(--head);cursor:pointer;white-space:nowrap;
+    transition:background .15s ease,border-color .15s ease,color .15s ease}
+  .copy-btn:hover{border-color:var(--amber);color:var(--amber)}
+  .copy-btn.done{background:var(--nick-green);border-color:var(--nick-green);color:#04220f}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font-family:var(--mono);font-size:13.5px;margin-top:2px}
+  .kv dt{color:var(--muted)}.kv dd{margin:0;color:var(--text)}
+  .kv dd b{color:var(--head)}
+  .startlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+  .startlist li{display:flex;gap:12px;align-items:baseline}
+  .startlist .chan{font-family:var(--mono);color:var(--nick-blue);font-weight:600;font-size:14px;flex:none;min-width:88px}
+  .startlist .desc{color:var(--muted);font-size:.96rem}
+  /* channel directory */
+  .chan-dir{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:34px}
+  @media (max-width:820px){.chan-dir{grid-template-columns:1fr}}
+  .grp{--c:var(--nick-blue);border:1px solid var(--border);border-radius:13px;background:var(--panel);
+    padding:20px;border-top:3px solid var(--c)}
+  .grp.wide{grid-column:1 / -1}
+  .grp-h{font-family:var(--mono);font-size:1rem;color:var(--head);margin:0 0 4px;font-weight:700;letter-spacing:-.01em;
+    display:flex;align-items:center;gap:8px}
+  .grp-h .tag{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+  .grp-note{font-size:.86rem;color:var(--muted);margin:0 0 15px}
+  .chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+  .chips li{display:inline-flex;flex-direction:column;gap:2px;font-family:var(--mono);
+    background:color-mix(in oklab,var(--c) 11%, var(--panel-2));
+    border:1px solid color-mix(in oklab,var(--c) 32%, var(--border));
+    padding:7px 12px;border-radius:9px;line-height:1.15;
+    transition:transform .12s ease, border-color .12s ease}
+  .chips li:hover{transform:translateY(-2px);border-color:var(--c)}
+  .chips .cn{font-size:13.5px;font-weight:600;color:var(--c)}
+  .chips .cs{font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+  @media (prefers-reduced-motion: reduce){.chips li:hover{transform:none}}
+  .connect-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+  .connect-cta .btn{padding:13px 20px;font-size:15px}
+
+  /* about strip */
+  .about{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:30px}
+  @media (max-width:760px){.about{grid-template-columns:1fr 1fr}}
+  .stat{border:1px solid var(--border-soft);border-radius:12px;background:var(--panel);padding:20px 18px}
+  .stat .num{font-family:var(--mono);font-size:1.9rem;font-weight:700;color:var(--amber);letter-spacing:-.02em;line-height:1}
+  .stat .lab{color:var(--muted);font-size:.9rem;margin-top:9px;line-height:1.4}
+
+  /* footer */
+  footer{border-top:1px solid var(--border-soft);padding:40px 0 54px;margin-top:20px}
+  .foot-grid{display:flex;flex-wrap:wrap;justify-content:space-between;gap:28px;align-items:flex-start}
+  .foot-links{display:flex;flex-wrap:wrap;gap:28px}
+  .foot-col h4{font-family:var(--mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  .foot-col a{display:block;color:var(--text);font-size:.95rem;margin-bottom:8px}
+  .foot-note{max-width:34ch;color:var(--muted);font-size:.9rem;line-height:1.6}
+  .foot-note .brand-sm{font-family:var(--mono);color:var(--head);font-weight:600}
+  .foot-bottom{margin-top:30px;padding-top:20px;border-top:1px solid var(--border-soft);
+    display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;color:var(--muted);font-size:.85rem;font-family:var(--mono)}
+
+  /* ---- server modal ---- */
+  .modal-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+    padding:20px;background:color-mix(in oklab,#000 62%, transparent);backdrop-filter:blur(4px)}
+  .modal-overlay.open{display:flex}
+  .modal{width:100%;max-width:660px;max-height:86vh;display:flex;flex-direction:column;background:var(--panel);
+    border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(0,0,0,.7)}
+  .modal-head{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--border);background:var(--panel-2)}
+  .modal-head h3{margin:0;font-family:var(--mono);font-size:1rem;color:var(--head);font-weight:700;flex:1}
+  .modal-x{background:transparent;border:1px solid var(--border);color:var(--head);border-radius:8px;
+    width:32px;height:32px;font-size:17px;cursor:pointer;line-height:1;flex:none}
+  .modal-x:hover{border-color:var(--amber);color:var(--amber)}
+  .modal-body{padding:16px 18px 20px;overflow:auto}
+  .modal-portnote{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin:0 0 16px;
+    padding:10px 12px;border:1px dashed var(--border);border-radius:9px}
+  .modal-portnote b{color:var(--head)}
+  .srv-group{margin-bottom:18px}
+  .srv-group:last-child{margin-bottom:0}
+  .srv-group h4{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 8px}
+  .srv-group .sg-note{font-family:var(--sans);font-size:.82rem;color:var(--muted);margin:0 0 10px}
+  .srv{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-soft)}
+  .srv:last-child{border-bottom:none}
+  .srv-host{font-family:var(--mono);font-size:13.5px;color:var(--head);flex:1;min-width:0;overflow-wrap:anywhere}
+  .srv-tags{display:flex;gap:6px;flex:none}
+  .badge{font-family:var(--mono);font-size:10.5px;padding:3px 8px;border-radius:6px;line-height:1.2;white-space:nowrap}
+  .badge.reg{color:var(--nick-blue);background:color-mix(in oklab,var(--nick-blue) 12%, var(--panel-2));
+    border:1px solid color-mix(in oklab,var(--nick-blue) 30%, var(--border))}
+  .badge.v6{color:var(--nick-green);background:color-mix(in oklab,var(--nick-green) 12%, var(--panel-2));
+    border:1px solid color-mix(in oklab,var(--nick-green) 30%, var(--border))}
+  .srv-copy{padding:6px 12px;font-size:12px;flex:none}
+  @media (max-width:520px){.srv{flex-wrap:wrap;gap:7px}.srv-host{flex-basis:100%}}
+</style>
+<script>document.documentElement.className += ' js';</script>
+</head>
+<body>
+<a class="skip" href="#connect">Skip to connect</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      undernet<span class="tld">.pro</span>
+    </div>
+    <nav class="links" aria-label="Primary">
+      <a class="navlink" href="#connect">Connect</a>
+      <a class="navlink" href="#why">Why IRC</a>
+      <a class="navlink" href="#channels">Channels</a>
+      <a class="navlink" href="#about">About</a>
+      <a class="btn btn-primary btn-chat" href="https://chat.undernet.org/" target="_blank" rel="noopener"><span class="live" aria-hidden="true"></span>Open web chat <span class="arr" aria-hidden="true">→</span></a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="pulse" aria-hidden="true"></span> online since 1994</span>
+        <h1>Real people,<br>real channels,<br><span class="amber">right now.</span></h1>
+        <p class="lede">Undernet is one of the world's original <strong>IRC networks</strong> — open chat rooms where conversation happens live, in plain text, with no account and no algorithm deciding what you see.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://chat.undernet.org/" target="_blank" rel="noopener">Start chatting in your browser →</a>
+          <a class="btn btn-ghost" href="https://www.undernet.org/" target="_blank" rel="noopener">Visit undernet.org</a>
+        </div>
+        <p class="microcopy">No sign-up. Pick a nickname, join a channel, say <b>hello</b>.</p>
+      </div>
+
+      <div class="irc" role="img" aria-label="An Undernet IRC channel window showing people chatting in real time in the channel hash-undernet.">
+        <div class="irc-bar">
+          <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="irc-title">Undernet — <b>#undernet</b> — irc.undernet.org</span>
+        </div>
+        <div class="irc-topic">
+          <span class="k">topic:</span>
+          <span>Welcome to Undernet! Be kind, /join a channel, and ask if you get stuck.</span>
+        </div>
+        <div class="irc-body reveal" id="chat" aria-hidden="true">
+          <span class="ln sys"><span class="star">*</span> Now talking in <span class="hl">#undernet</span></span>
+          <span class="ln sys"><span class="star">*</span> Topic set by <b>X</b></span>
+          <span class="ln"><span class="t">&lt;</span><span class="n b">chief</span><span class="t">&gt;</span> hey, just connected — is there a general channel?</span>
+          <span class="ln"><span class="t">&lt;</span><span class="n c">[Marius]</span><span class="t">&gt;</span> welcome chief! #undernet is the main one, #help if you get stuck :)</span>
+          <span class="ln"><span class="t">&lt;</span><span class="n m">[a]</span><span class="t">&gt;</span> or #os if you're building something</span>
+          <span class="ln sys"><span class="star">*</span> <b>Tayzilla</b> has joined <span class="hl">#undernet</span></span>
+          <span class="ln"><span class="t">&lt;</span><span class="n g">Tayzilla</span><span class="t">&gt;</span> hey all o/</span>
+          <span class="ln"><span class="t">&lt;</span><span class="n b">chief</span><span class="t">&gt;</span> wait this is way friendlier than i expected</span>
+          <span class="ln"><span class="t">&lt;</span><span class="n m">rena</span><span class="t">&gt;</span> welcome chief 👑 make yourself at home</span>
+          <span class="ln"><span class="t">&lt;</span><span class="n g">Telac</span><span class="t">&gt;</span> no algorithm here, just us deciding what you see, badly</span>
+          <span class="ln"><span class="t">&lt;</span><span class="n o">}P{</span><span class="t">&gt;</span> that's kind of the whole point <span class="hl">🙂</span></span>
+        </div>
+        <div class="irc-input" aria-hidden="true">
+          <span class="prompt">[#undernet]</span>
+          <span class="field">type a message<span class="caret"></span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CONNECT -->
+  <section id="connect" class="appear">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-kicker">connect</span></div>
+      <h2>Two ways in. Both take about thirty seconds.</h2>
+      <p class="sec-sub">Easiest is the browser — nothing to install. Prefer a dedicated IRC client? Point it at the server below.</p>
+
+      <div class="connect-grid">
+        <div class="panel">
+          <div class="panel-h"><span class="dotmini" aria-hidden="true"></span> Point any IRC client here</div>
+          <div class="panel-b">
+            <p class="field-label">Server address</p>
+            <div class="copy-row">
+              <code class="copy-val" id="server">irc.undernet.org</code>
+              <button class="copy-btn" id="copyBtn" type="button" data-copy="irc.undernet.org" aria-label="Copy server address irc.undernet.org">Copy</button>
+            </div>
+            <dl class="kv">
+              <dt>Ports</dt><dd><b>6660–6669</b> and <b>7000</b></dd>
+              <dt>Network</dt><dd>Undernet</dd>
+              <dt>IPv6</dt><dd>irc6.undernet.org</dd>
+              <dt>Regions</dt><dd>us6 · eu6 · worldwide</dd>
+            </dl>
+            <div class="connect-cta">
+              <button class="btn btn-ghost" id="srvBtn" type="button" aria-haspopup="dialog">Full server list</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><span class="dotmini" aria-hidden="true"></span> Chat straight from your browser</div>
+          <div class="panel-b">
+            <p style="margin:0;color:var(--text)">No client to install and nothing to configure. Pick a nickname, hit connect, and you're in — the quickest way onto Undernet.</p>
+            <p style="margin:14px 0 0;color:var(--muted);font-size:.95rem">Looking for a room? Browse the <a href="#channels">channel directory</a> below.</p>
+            <div class="connect-cta">
+              <a class="btn btn-primary" href="https://chat.undernet.org/" target="_blank" rel="noopener">Open web chat →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- WHY -->
+  <section id="why" class="appear">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-kicker">why undernet</span></div>
+      <h2>Everything chat should be — and has been since 1994.</h2>
+      <p class="sec-sub">Undernet pairs the openness of classic IRC with the services that keep communities safe and welcoming — no ads, no tracking, no algorithm. Just real people, in real time, on a network built and run by the people who use it.</p>
+
+      <div class="cards">
+        <article class="card">
+          <div class="chan">&amp;nowhere</div>
+          <h3>No account, no algorithm</h3>
+          <p>Pick a nickname and you're chatting — no sign-up, no profile, no ads. Nothing ranks or hides what you read: you see every message, in the order it was sent.</p>
+        </article>
+        <article class="card">
+          <div class="chan">/connect</div>
+          <h3>Chat your way</h3>
+          <p>IRC is an open standard, so the client is your call — chat straight from the browser, or bring mIRC, HexChat, Textual, WeeChat, irssi or a mobile app. One network, wherever you like it.</p>
+        </article>
+        <article class="card">
+          <div class="chan">~40 servers</div>
+          <h3>Always on, worldwide</h3>
+          <p>Around forty volunteer-run servers span the Americas, Europe and beyond, all speaking <b>ircu</b> — the server software Undernet wrote and has spent decades refining to stay fast and ride out netsplits.</p>
+        </article>
+        <article class="card">
+          <div class="chan">#help</div>
+          <h3>Newcomers always welcome</h3>
+          <p>Never touched IRC? You're in good company. Ask anything in <b>#help</b>, or join <b>OpSchool</b> to learn the ropes of running a channel. Undernet has been showing newcomers around since 1994.</p>
+        </article>
+        <article class="card">
+          <div class="chan">#usernames</div>
+          <h3>Run by its community</h3>
+          <p>Undernet is a volunteer project, steered by open committees — Routing, Channel Service, Coder and User — and shaped by the people who log in every day. It answers to its community, not shareholders.</p>
+        </article>
+        <article class="card">
+          <div class="chan">#cservice</div>
+          <h3>Your channel, protected</h3>
+          <p>Register your channel with <b>X</b>, Undernet's Channel Service, and set ops, bans and access lists exactly how you want them. <b>CService</b> guards your community's home — even while every op is asleep.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CHANNELS -->
+  <section id="channels" class="appear">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-kicker">channels</span></div>
+      <h2>Find your room.</h2>
+      <p class="sec-sub">A sampling of what's live on Undernet — from the network's own help desks to topic hangouts and busy regional communities. Open the web chat and <span class="mono">/join</span> any of them.</p>
+
+      <div class="chan-dir">
+        <article class="grp" style="--c:var(--nick-blue)">
+          <h3 class="grp-h"><span class="tag" aria-hidden="true"></span> Official Undernet</h3>
+          <p class="grp-note">The network's own help desks and services.</p>
+          <ul class="chips">
+            <li><span class="cn">#undernet</span><span class="cs">Main channel</span></li>
+            <li><span class="cn">#help</span><span class="cs">New-user help</span></li>
+            <li><span class="cn">#class</span><span class="cs">IRC lessons</span></li>
+            <li><span class="cn">#usernames</span><span class="cs">Login help</span></li>
+            <li><span class="cn">#ipv6-help</span><span class="cs">IPv6 help</span></li>
+            <li><span class="cn">#zt</span><span class="cs">Reop help</span></li>
+            <li><span class="cn">#cservice</span><span class="cs">Channel Service</span></li>
+            <li><span class="cn">#ChanFix</span><span class="cs">Channel recovery</span></li>
+            <li><span class="cn">#user-com</span><span class="cs">User Committee</span></li>
+            <li><span class="cn">#coder-com</span><span class="cs">Coder Committee</span></li>
+            <li><span class="cn">#routing-com</span><span class="cs">Routing Committee</span></li>
+          </ul>
+        </article>
+
+        <article class="grp" style="--c:var(--nick-cyan)">
+          <h3 class="grp-h"><span class="tag" aria-hidden="true"></span> More from the network</h3>
+          <p class="grp-note">Project and community channels.</p>
+          <ul class="chips">
+            <li><span class="cn">#7</span><span class="cs">Hangout</span></li>
+            <li><span class="cn">#algorithms</span><span class="cs">Algorithms</span></li>
+            <li><span class="cn">#code</span><span class="cs">Coders</span></li>
+            <li><span class="cn">#db</span><span class="cs">Databases</span></li>
+            <li><span class="cn">#haxor</span><span class="cs">Hacking</span></li>
+            <li><span class="cn">#http</span><span class="cs">Web &amp; HTTP</span></li>
+            <li><span class="cn">#os</span><span class="cs">Operating systems</span></li>
+            <li><span class="cn">#sync</span><span class="cs">Sync &amp; sharing</span></li>
+          </ul>
+        </article>
+
+        <article class="grp" style="--c:var(--nick-magenta)">
+          <h3 class="grp-h"><span class="tag" aria-hidden="true"></span> Topics &amp; interests</h3>
+          <p class="grp-note">Tech, Linux, games, media and general hangouts.</p>
+          <ul class="chips">
+            <li><span class="cn">#linux</span><span class="cs">Linux</span></li>
+            <li><span class="cn">#redhat</span><span class="cs">Red Hat</span></li>
+            <li><span class="cn">#centos</span><span class="cs">CentOS</span></li>
+            <li><span class="cn">#debian</span><span class="cs">Debian</span></li>
+            <li><span class="cn">#tcl-help</span><span class="cs">Tcl scripting</span></li>
+            <li><span class="cn">#darkweb</span><span class="cs">Dark web</span></li>
+            <li><span class="cn">#hackteam</span><span class="cs">Hacking crew</span></li>
+            <li><span class="cn">#₿</span><span class="cs">Bitcoin</span></li>
+            <li><span class="cn">#politics</span><span class="cs">Politics</span></li>
+            <li><span class="cn">#worldcup</span><span class="cs">World Cup</span></li>
+            <li><span class="cn">#music</span><span class="cs">Music</span></li>
+            <li><span class="cn">#radio</span><span class="cs">Radio</span></li>
+            <li><span class="cn">#bookz</span><span class="cs">Ebooks</span></li>
+            <li><span class="cn">#scrabble</span><span class="cs">Word games</span></li>
+            <li><span class="cn">#chat</span><span class="cs">General chat</span></li>
+            <li><span class="cn">#allnitecafe</span><span class="cs">Late-night café</span></li>
+            <li><span class="cn">#idlezone</span><span class="cs">Idling</span></li>
+            <li><span class="cn">#family_chat</span><span class="cs">Family chat</span></li>
+            <li><span class="cn">#hayalet</span><span class="cs">Turkish chat</span></li>
+            <li><span class="cn">#offline</span><span class="cs">Casual chat</span></li>
+            <li><span class="cn">#official</span><span class="cs">Officials</span></li>
+            <li><span class="cn">#operator</span><span class="cs">Channel ops</span></li>
+            <li><span class="cn">#sky</span><span class="cs">Chill chat</span></li>
+            <li><span class="cn">#underland</span><span class="cs">Community</span></li>
+            <li><span class="cn">#wonderland</span><span class="cs">Social lounge</span></li>
+          </ul>
+        </article>
+
+        <article class="grp" style="--c:var(--nick-orange)">
+          <h3 class="grp-h"><span class="tag" aria-hidden="true"></span> Around the world</h3>
+          <p class="grp-note">Country and city hangouts.</p>
+          <ul class="chips">
+            <li><span class="cn">#usa</span><span class="cs">United States</span></li>
+            <li><span class="cn">#dallas</span><span class="cs">Dallas</span></li>
+            <li><span class="cn">#canada</span><span class="cs">Canada</span></li>
+            <li><span class="cn">#toronto</span><span class="cs">Toronto</span></li>
+            <li><span class="cn">#montreal</span><span class="cs">Montréal</span></li>
+            <li><span class="cn">#quebec</span><span class="cs">Québec</span></li>
+            <li><span class="cn">#mexico</span><span class="cs">Mexico</span></li>
+            <li><span class="cn">#brazil</span><span class="cs">Brazil</span></li>
+            <li><span class="cn">#ireland</span><span class="cs">Ireland</span></li>
+            <li><span class="cn">#dublin</span><span class="cs">Dublin</span></li>
+            <li><span class="cn">#england</span><span class="cs">England</span></li>
+            <li><span class="cn">#london</span><span class="cs">London</span></li>
+            <li><span class="cn">#brussels</span><span class="cs">Brussels</span></li>
+            <li><span class="cn">#oslo</span><span class="cs">Oslo</span></li>
+            <li><span class="cn">#portugal</span><span class="cs">Portugal</span></li>
+            <li><span class="cn">#tenerife</span><span class="cs">Tenerife</span></li>
+            <li><span class="cn">#genova</span><span class="cs">Genoa</span></li>
+            <li><span class="cn">#macedonia</span><span class="cs">Macedonia</span></li>
+            <li><span class="cn">#skopje</span><span class="cs">Skopje</span></li>
+            <li><span class="cn">#gradiste</span><span class="cs">Gradište</span></li>
+            <li><span class="cn">#pakistan</span><span class="cs">Pakistan</span></li>
+            <li><span class="cn">#manila</span><span class="cs">Manila</span></li>
+            <li><span class="cn">#makati</span><span class="cs">Makati</span></li>
+            <li><span class="cn">#cebu</span><span class="cs">Cebu</span></li>
+            <li><span class="cn">#phillippines</span><span class="cs">Philippines</span></li>
+          </ul>
+        </article>
+
+        <article class="grp wide" style="--c:var(--nick-green)">
+          <h3 class="grp-h"><span class="tag" aria-hidden="true"></span> România</h3>
+          <p class="grp-note">One of Undernet's largest communities — channels for the country and its cities.</p>
+          <ul class="chips">
+            <li><span class="cn">#romania</span><span class="cs">Romania</span></li>
+            <li><span class="cn">#bucuresti</span><span class="cs">Bucharest</span></li>
+            <li><span class="cn">#arad</span><span class="cs">Arad</span></li>
+            <li><span class="cn">#barlad</span><span class="cs">Bârlad</span></li>
+            <li><span class="cn">#brasov</span><span class="cs">Brașov</span></li>
+            <li><span class="cn">#buzau</span><span class="cs">Buzău</span></li>
+            <li><span class="cn">#cluj</span><span class="cs">Cluj-Napoca</span></li>
+            <li><span class="cn">#craiova</span><span class="cs">Craiova</span></li>
+            <li><span class="cn">#deva</span><span class="cs">Deva</span></li>
+            <li><span class="cn">#iasi</span><span class="cs">Iași</span></li>
+            <li><span class="cn">#oradea</span><span class="cs">Oradea</span></li>
+            <li><span class="cn">#severin</span><span class="cs">Drobeta-Turnu Severin</span></li>
+            <li><span class="cn">#sibiu</span><span class="cs">Sibiu</span></li>
+            <li><span class="cn">#suceava</span><span class="cs">Suceava</span></li>
+            <li><span class="cn">#timisoara</span><span class="cs">Timișoara</span></li>
+            <li><span class="cn">#tulcea</span><span class="cs">Tulcea</span></li>
+            <li><span class="cn">#valcea</span><span class="cs">Râmnicu Vâlcea</span></li>
+            <li><span class="cn">#mehedinti</span><span class="cs">Mehedinți county</span></li>
+            <li><span class="cn">#transfagarasan</span><span class="cs">Transfăgărășan</span></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ABOUT -->
+  <section id="about" class="appear">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-kicker">the network</span></div>
+      <h2>Three decades of staying online.</h2>
+      <p class="sec-sub">Undernet launched in 1994 and has been carrying live conversation ever since — through the rise and fall of a dozen shinier chat apps.</p>
+      <div class="about">
+        <div class="stat"><div class="num">1994</div><div class="lab">Serving real-time chat without a break</div></div>
+        <div class="stat"><div class="num">~40</div><div class="lab">Servers keeping the network reachable worldwide</div></div>
+        <div class="stat"><div class="num">X</div><div class="lab">The Channel Service bot that guards your rooms</div></div>
+        <div class="stat"><div class="num">0</div><div class="lab">Ads, algorithms, or accounts required</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="appear">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-note">
+        <div class="brand"><span class="dot" aria-hidden="true"></span> undernet<span class="tld">.pro</span></div>
+        <p style="margin-top:14px">A community front door to the Undernet IRC network. The official network home is <a href="https://www.undernet.org/" target="_blank" rel="noopener">undernet.org</a>.</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>Get on</h4>
+          <a href="https://chat.undernet.org/" target="_blank" rel="noopener">Web chat</a>
+          <a href="https://www.undernet.org/servers.php" target="_blank" rel="noopener">Server list</a>
+          <a href="#connect">Connect with a client</a>
+        </div>
+        <div class="foot-col">
+          <h4>Learn</h4>
+          <a href="https://www.undernet.org/" target="_blank" rel="noopener">undernet.org</a>
+          <a href="https://www.undernet.org/documents/" target="_blank" rel="noopener">Docs project</a>
+          <a href="#why">Why IRC</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>Not affiliated as the official site — just fans keeping the signal alive.</span>
+      <button class="copy-btn" id="themeBtn" type="button" style="padding:6px 12px" aria-label="Toggle light or dark theme">◐ theme</button>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Staggered reveal of chat lines
+  var chat = document.getElementById('chat');
+  if(chat){
+    var lines = Array.prototype.slice.call(chat.querySelectorAll('.ln'));
+    if(reduce){
+      lines.forEach(function(l){ l.classList.add('show'); });
+    } else {
+      var started = false;
+      var run = function(){
+        if(started) return; started = true;
+        lines.forEach(function(l,i){
+          setTimeout(function(){ l.classList.add('show'); }, 260 + i*520);
+        });
+      };
+      if('IntersectionObserver' in window){
+        var io = new IntersectionObserver(function(entries){
+          entries.forEach(function(e){ if(e.isIntersecting){ run(); io.disconnect(); } });
+        }, {threshold:.35});
+        io.observe(chat);
+      } else { run(); }
+    }
+  }
+
+  // Copy server address
+  var btn = document.getElementById('copyBtn');
+  if(btn){
+    btn.addEventListener('click', function(){
+      var val = btn.getAttribute('data-copy');
+      var done = function(){
+        var old = btn.textContent;
+        btn.textContent = 'Copied ✓'; btn.classList.add('done');
+        setTimeout(function(){ btn.textContent = old; btn.classList.remove('done'); }, 1600);
+      };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(val).then(done, done);
+      } else {
+        var t=document.createElement('textarea'); t.value=val; document.body.appendChild(t);
+        t.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(t); done();
+      }
+    });
+  }
+
+  // Theme toggle
+  var tbtn = document.getElementById('themeBtn');
+  if(tbtn){
+    tbtn.addEventListener('click', function(){
+      var root = document.documentElement;
+      var cur = root.getAttribute('data-theme');
+      var isDark = cur ? cur === 'dark'
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    });
+  }
+})();
+</script>
+<!-- SERVER LIST MODAL -->
+<div class="modal-overlay" id="srvModal" role="dialog" aria-modal="true" aria-labelledby="srvModalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="srvModalTitle">Undernet servers</h3>
+      <button class="modal-x" type="button" data-close aria-label="Close server list">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-portnote">All servers use ports <b>6660–6669</b> and <b>7000</b>. New here? Just use <b>irc.undernet.org</b> — it routes you to a nearby server automatically.</p>
+
+      <div class="srv-group">
+        <h4>Recommended · round-robin</h4>
+        <p class="sg-note">Auto-picks a healthy server for you. Use these unless you have a reason not to.</p>
+        <div class="srv"><code class="srv-host">irc.undernet.org</code><span class="srv-tags"><span class="badge reg">WorldWide</span></span><button class="copy-btn srv-copy" type="button" data-copy="irc.undernet.org" aria-label="Copy irc.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">irc6.undernet.org</code><span class="srv-tags"><span class="badge reg">WorldWide</span><span class="badge v6">IPv6</span></span><button class="copy-btn srv-copy" type="button" data-copy="irc6.undernet.org" aria-label="Copy irc6.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">us6.undernet.org</code><span class="srv-tags"><span class="badge reg">US</span><span class="badge v6">IPv6</span></span><button class="copy-btn srv-copy" type="button" data-copy="us6.undernet.org" aria-label="Copy us6.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">eu6.undernet.org</code><span class="srv-tags"><span class="badge reg">EU</span><span class="badge v6">IPv6</span></span><button class="copy-btn srv-copy" type="button" data-copy="eu6.undernet.org" aria-label="Copy eu6.undernet.org">Copy</button></div>
+      </div>
+
+      <div class="srv-group">
+        <h4>Regional servers</h4>
+        <p class="sg-note">Connect to a specific city if you'd rather pick your own.</p>
+        <div class="srv"><code class="srv-host">dallas.tx.us.undernet.org</code><span class="srv-tags"><span class="badge reg">US</span><span class="badge v6">IPv6</span></span><button class="copy-btn srv-copy" type="button" data-copy="dallas.tx.us.undernet.org" aria-label="Copy dallas.tx.us.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">losangeles.ca.us.undernet.org</code><span class="srv-tags"><span class="badge reg">US</span></span><button class="copy-btn srv-copy" type="button" data-copy="losangeles.ca.us.undernet.org" aria-label="Copy losangeles.ca.us.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">miami.fl.us.undernet.org</code><span class="srv-tags"><span class="badge reg">US</span><span class="badge v6">IPv6</span></span><button class="copy-btn srv-copy" type="button" data-copy="miami.fl.us.undernet.org" aria-label="Copy miami.fl.us.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">seattle.wa.us.undernet.org</code><span class="srv-tags"><span class="badge reg">US</span></span><button class="copy-btn srv-copy" type="button" data-copy="seattle.wa.us.undernet.org" aria-label="Copy seattle.wa.us.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">budapest.hu.eu.undernet.org</code><span class="srv-tags"><span class="badge reg">EU</span></span><button class="copy-btn srv-copy" type="button" data-copy="budapest.hu.eu.undernet.org" aria-label="Copy budapest.hu.eu.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">oslo.no.eu.undernet.org</code><span class="srv-tags"><span class="badge reg">EU</span><span class="badge v6">IPv6</span></span><button class="copy-btn srv-copy" type="button" data-copy="oslo.no.eu.undernet.org" aria-label="Copy oslo.no.eu.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">capelle.nl.eu.undernet.org</code><span class="srv-tags"><span class="badge reg">EU</span><span class="badge v6">IPv6</span></span><button class="copy-btn srv-copy" type="button" data-copy="capelle.nl.eu.undernet.org" aria-label="Copy capelle.nl.eu.undernet.org">Copy</button></div>
+      </div>
+
+      <div class="srv-group">
+        <h4>AnyCast</h4>
+        <p class="sg-note">Single addresses routed to the nearest node at the network layer.</p>
+        <div class="srv"><code class="srv-host">ix1.undernet.org</code><span class="srv-tags"><span class="badge reg">WorldWide</span></span><button class="copy-btn srv-copy" type="button" data-copy="ix1.undernet.org" aria-label="Copy ix1.undernet.org">Copy</button></div>
+        <div class="srv"><code class="srv-host">ix2.undernet.org</code><span class="srv-tags"><span class="badge reg">WorldWide</span></span><button class="copy-btn srv-copy" type="button" data-copy="ix2.undernet.org" aria-label="Copy ix2.undernet.org">Copy</button></div>
+      </div>
+
+      <p class="sg-note" style="margin-top:4px">Source: <a href="https://www.undernet.org/servers.php" target="_blank" rel="noopener">undernet.org/servers.php</a> — the authoritative, always-current list.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var overlay=document.getElementById('srvModal');
+  var openBtn=document.getElementById('srvBtn');
+  var lastFocus=null;
+  function openM(){lastFocus=document.activeElement;overlay.classList.add('open');document.body.style.overflow='hidden';var x=overlay.querySelector('.modal-x');if(x)x.focus();}
+  function closeM(){overlay.classList.remove('open');document.body.style.overflow='';if(lastFocus&&lastFocus.focus)lastFocus.focus();}
+  if(openBtn)openBtn.addEventListener('click',openM);
+  if(overlay){
+    overlay.addEventListener('click',function(e){if(e.target===overlay)closeM();});
+    overlay.querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',closeM);});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay.classList.contains('open'))closeM();});
+  }
+  document.querySelectorAll('.srv-copy').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var val=btn.getAttribute('data-copy');
+      var done=function(){var o=btn.textContent;btn.textContent='Copied ✓';btn.classList.add('done');setTimeout(function(){btn.textContent=o;btn.classList.remove('done');},1400);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(val).then(done,done);}
+      else{var t=document.createElement('textarea');t.value=val;document.body.appendChild(t);t.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(t);done();}
+    });
+  });
+})();
+</script>
+
+<script>
+(function(){
+  var els=[].slice.call(document.querySelectorAll('.appear'));
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce||!('IntersectionObserver' in window)){
+    els.forEach(function(e){e.classList.add('seen');});
+    return;
+  }
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){ en.target.classList.add('seen'); io.unobserve(en.target); }
+    });
+  },{threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+  els.forEach(function(e){io.observe(e);});
+})();
+</script>
+</body>
+</html>
